@@ -1,15 +1,34 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
+type message struct {
+	Text string
+}
+
+type update struct {
+	Message message
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, r.URL.Path[1:])
+	var u update
+	res, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	json.Unmarshal(res, &u)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func main() {
 	http.Handle("/telegramBot", http.HandlerFunc(handler))
-	http.ListenAndServeTLS(":443", "/home/ec2-user/ssl/chained.pem", "/home/ec2-user/ssl/domain.key", nil)
+	err := http.ListenAndServeTLS(":443", "/home/ec2-user/ssl/chained.pem", "/home/ec2-user/ssl/domain.key", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
