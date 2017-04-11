@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	sheets "google.golang.org/api/sheets/v4"
@@ -29,7 +31,8 @@ type update struct {
 
 var googleClient *sheets.Service
 var spreadsheetID = os.Getenv("SPREADSHEET_ID")
-var readRange = "工作表1!A:E"
+var writeRange = "工作表1!A:E"
+var readRange = "工作表1!E:E"
 var botToken = os.Getenv("BOT_TOKEN")
 var prefix = "https://api.telegram.org/bot" + botToken + "/"
 
@@ -122,10 +125,33 @@ func record(recordData [][]interface{}) {
 	rb := &sheets.ValueRange{
 		Values: recordData,
 	}
-	_, err := googleClient.Spreadsheets.Values.Append(spreadsheetID, readRange, rb).ValueInputOption("RAW").Do()
+	_, err := googleClient.Spreadsheets.Values.Append(spreadsheetID, writeRange, rb).ValueInputOption("RAW").Do()
 	if err != nil {
 		log.Fatalf("Unable to retrieve data from sheet. %v", err)
 	}
+}
+
+func getTotal() float64 {
+	resp, err := googleClient.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve data from sheet. %v", err)
+	}
+	sum := 0.0
+	if len(resp.Values) > 0 {
+		for _, row := range resp.Values {
+			tmp, err := strconv.ParseFloat(row[0].(string), 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			sum += tmp
+		}
+	}
+	return sum
+}
+
+func reply(replyMsg string) {
+	finalURL := prefix + "sendMessage?chat_id=188909374&text=" + replyMsg
+	http.Get(finalURL)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -137,6 +163,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(res, &u)
 	priceSlice := strings.Split(u.Message.Text, " ")
 	price := priceSlice[len(priceSlice)-1]
+	replyMsg := "done"
 	switch {
 	case strings.HasPrefix(u.Message.Text, "P"):
 		record([][]interface{}{{time.Now().Format("2006-01-02"), "Lonsdale, North Vancouver", "Persia Foods", "vegetable & fruit", price}})
@@ -148,10 +175,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		record([][]interface{}{{time.Now().Format("2006-01-02"), "North Vancouver", "T&T Supermarket", "food", price}})
 	case strings.HasPrefix(u.Message.Text, "SP"):
 		record([][]interface{}{{time.Now().Format("2006-01-02"), "North Vancouver", "Shoppers", "food", price}})
+	case strings.HasPrefix(u.Message.Text, "total"):
+		replyMsg = strconv.FormatFloat(getTotal(), 'f', 2, 64)
 	default:
-		finalURL := prefix + "sendMessage?chat_id=188909374&text=I don't understand"
-		http.Get(finalURL)
+		replyMsg = "I don't understand"
 	}
+	reply(replyMsg)
 	w.WriteHeader(http.StatusAccepted)
 }
 
