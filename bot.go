@@ -158,7 +158,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	googleClient = initClient()
 	http.Handle("/telegramBot", http.HandlerFunc(handler))
-	err := http.ListenAndServeTLS(":443", "/home/ec2-user/ssl/chained.pem", "/home/ec2-user/ssl/domain.key", nil)
+	err := http.ListenAndServe(":8001", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
