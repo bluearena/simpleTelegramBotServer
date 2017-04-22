@@ -202,6 +202,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		storeTT.record(price)
 	case strings.HasPrefix(u.Message.Text, "SP"):
 		storeSP.record(price)
+	case strings.HasPrefix(u.Message.Text, "WM"):
+		storeWM.record(price)
 	case strings.ToLower(u.Message.Text) == "total":
 		replyMsg = strconv.FormatFloat(getTotal(), 'f', 2, 64)
 	case strings.ToLower(u.Message.Text) == "help":
