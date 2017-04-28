@@ -39,7 +39,7 @@ type store struct {
 var storeP = store{"Lonsdale, North Vancouver", "Persia Foods", "vegetable & fruit", "P"}
 var storeTW = store{"North Vancouver", "Taiwan", "lunch", "TW"}
 var storeSF = store{"North Vancouver", "Save on Foods", "food", "SF"}
-var storeTT = store{"North Vancouver", "TT Supermarket", "food", "TT"}
+var storeTT = store{"North Vancouver", "T&T Supermarket", "food", "TT"}
 var storeSP = store{"North Vancouver", "Shoppers", "tool", "SP"}
 var storeWM = store{"North Vancouver", "Walmart", "food", "WM"}
 
@@ -170,9 +170,9 @@ func reply(replyMsg string) {
 func getHelp() string {
 	msg := ""
 	for _, v := range allStores {
-		msg += fmt.Sprintf("%v: %v|", v.Shortcut, v.Name)
+		msg += fmt.Sprintf("%v: %v\n", v.Shortcut, v.Name)
 	}
-	return msg
+	return url.PathEscape(msg)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
